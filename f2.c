@@ -21,10 +21,7 @@ size_t rrn_converter(short ponteiro) {
 }
 
 void extrair_pagina(PAGINA* pag, ARV_B* arvore) {
-    
-    fseek(arvore->arq, rrn_converter(arvore->raiz), SEEK_SET);
     fread(pag, sizeof(PAGINA), 1, arvore->arq);
-
 }
 
 void imprimir_registro(size_t endereco, FILE* arquivoDados) {
@@ -64,20 +61,20 @@ void imprimir_registro(size_t endereco, FILE* arquivoDados) {
     free(registro);
 }
 
-void listar_dado(FILE* arq_dados, ARV_B* arvore) {
+void listar_pagina(FILE* arq_dados, ARV_B* arvore) {
     PAGINA pag;
     extrair_pagina(&pag,arvore);
 
     if (pag.ponteiro[0] !=-1) {
         fseek(arvore->arq, rrn_converter(pag.ponteiro[0]), SEEK_SET);
-        listar_dado(arq_dados, arvore);
+        listar_pagina(arq_dados, arvore);
     }
 
     imprimir_registro(pag.dado[0].endereco, arq_dados);
 
     if (pag.ponteiro[1] !=-1) {
         fseek(arvore->arq, rrn_converter(pag.ponteiro[1]), SEEK_SET);
-        listar_dado(arq_dados, arvore);
+        listar_pagina(arq_dados, arvore);
     }
 
     if (pag.qtd_dados > 1)
@@ -85,7 +82,7 @@ void listar_dado(FILE* arq_dados, ARV_B* arvore) {
 
     if (pag.ponteiro[2] !=-1) {
         fseek(arvore->arq, rrn_converter(pag.ponteiro[2]), SEEK_SET);
-        listar_dado(arq_dados, arvore);
+        listar_pagina(arq_dados, arvore);
     }
 
     if (pag.qtd_dados > 2)
@@ -93,13 +90,13 @@ void listar_dado(FILE* arq_dados, ARV_B* arvore) {
 
     if (pag.ponteiro[3] !=-1) {
         fseek(arvore->arq, rrn_converter(pag.ponteiro[3]), SEEK_SET);
-        listar_dado(arq_dados, arvore);
+        listar_pagina(arq_dados, arvore);
     }
 }
 
 void listar_dados(FILE* arq_dados, ARV_B* arvore) {
     if (arvore->raiz != -1) {
         fseek(arvore->arq, rrn_converter(arvore->raiz), SEEK_SET);
-        listar_dado(arq_dados, arvore);
+        listar_pagina(arq_dados, arvore);
     }
 }
