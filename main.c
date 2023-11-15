@@ -511,11 +511,11 @@ void pesquisarPorChavePrimaria(FILE* arquivoIndice, FILE* arquivoDados, STRING c
 
         //mostra os dados...
         printf("Registro encontrado:\n");
-        printf("Codigo cliente:%s\n", registro->codCliente);
+        printf("Codigo Cliente:%s\n", registro->codCliente);
         printf("Codigo Veiculo:%s\n", registro->codVeiculo);
-        printf("Nome cliente:%s\n", registro->nomeCliente);
-        printf("Nome veiculo:%s\n", registro->nomeVeiculo);
-        printf("Quantidade de dias: %d\n\n", *(registro->quantDias));
+        printf("Nome Cliente:%s\n", registro->nomeCliente);
+        printf("Nome Veiculo:%s\n", registro->nomeVeiculo);
+        printf("Quantidade de Dias: %d\n\n", *(registro->quantDias));
         free(registro);
         
     }
