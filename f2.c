@@ -100,3 +100,28 @@ void listar_dados(FILE* arq_dados, ARV_B* arvore) {
         listar_pagina(arq_dados, arvore);
     }
 }
+
+short pesquisar_dado(STRING* chave, ARV_B* arvore) {
+    PAGINA pag;
+    extrair_pagina(&pag,arvore);
+    
+    if(strcpm(chave, pag.dado[0].string) == -1)  {
+        fseek(arvore->arq,rrn_converter(pag.ponteiro[0]),SEEK_SET);
+        return pesquisar_dado(chave,arvore);
+    }
+    if(strcpm(chave, pag.dado[0].string) == 0)
+        return 
+}
+
+void pesquisar_chave(STRING* chave, FILE* arq_dados, ARV_B* arvore) {
+    if (arvore->raiz != -1) {
+        fseek(arvore->arq, rrn_converter(arvore->raiz), SEEK_SET);
+        if () {
+
+        } else {
+            printf("Chave nao encontrada: %s.", *chave);
+        }
+    } else {
+        printf("Chave nao encontrada: %s.", *chave);
+    }
+}
