@@ -156,7 +156,7 @@ short pesquisar_dado(STRING* chave, short pagina, ARV_B* arvore) {
     }
 }
 
-void pesquisar_chave(STRING* chave, FILE* arq_dados, ARV_B* arvore) {
+void pesquisar_chave(STRING* chave, ARV_B* arvore, FILE* arq_dados) {
     short contrasenha;
     if (arvore->raiz != -1) {
         fseek(arvore->arq, rrn_converter(arvore->raiz), SEEK_SET);
