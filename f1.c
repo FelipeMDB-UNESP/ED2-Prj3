@@ -6,12 +6,13 @@ typedef struct indice {
 } INDICE;
 
 typedef struct pagina {
-    INDICE dados[3];
-    char ponteiro[4];
+    short qtd_dados;
+    INDICE dado[3];
+    short ponteiro[4];
 } PAGINA;
 
 typedef struct arv_b {
-    size_t raiz;
+    short raiz;
     FILE* arq;
 } ARV_B;
 
