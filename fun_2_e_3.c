@@ -137,9 +137,8 @@ short pesquisar_dado(STRING* chave, short pagina, ARV_B* arvore) {
         return pagina*10;
     }
 
-    //se for maior compara com o proximo (se ele existir)
-
-    if(strcpm(*chave, pag.dado[1].string) == -1)  {
+    //se for maior checa o rrn posterior
+    if(strcpm(*chave, pag.dado[0].string) == 1)  {
         if (pag.ponteiro[1] != -1) {
             fseek(arvore->arq, rrn_converter(pag.ponteiro[1]), SEEK_SET);
             return pesquisar_dado(chave, pag.ponteiro[1], arvore);
@@ -149,12 +148,13 @@ short pesquisar_dado(STRING* chave, short pagina, ARV_B* arvore) {
         }
     }
 
+    //mantem a logica dos ultimos 3 comentarios nos proximos casos
     if(strcpm(*chave, pag.dado[1].string) == 0 && pag.qtd_dados > 1) {
         printf("\nChave encontrada: %s. (Pag: %d | Pos: %d)\n", *chave, pagina, 1);
         return pagina*10 + 1;
     }
 
-    if(strcpm(*chave, pag.dado[2].string) == -1)  {
+    if(strcpm(*chave, pag.dado[1].string) == 1 && pag.qtd_dados > 1)  {
         if (pag.ponteiro[2] != -1) {
             fseek(arvore->arq, rrn_converter(pag.ponteiro[2]), SEEK_SET);
             return pesquisar_dado(chave, pag.ponteiro[2], arvore);
@@ -164,13 +164,13 @@ short pesquisar_dado(STRING* chave, short pagina, ARV_B* arvore) {
         }
     }
 
-    if(strcpm(*chave, pag.dado[2].string) == 0) {
+    if(strcpm(*chave, pag.dado[2].string) == 0 && pag.qtd_dados > 2) {
         printf("\nChave encontrada: %s. (Pag: %d | Pos: %d)\n", *chave, pagina, 2);
         return pagina*10 + 2;
     }
 
 
-    if (pag.ponteiro[3] != -1) {
+    if (pag.ponteiro[3] != -1 && pag.qtd_dados > 2) {
         fseek(arvore->arq, rrn_converter(pag.ponteiro[3]), SEEK_SET);
         return pesquisar_dado(chave, pag.ponteiro[3], arvore);
     } else {
@@ -179,10 +179,13 @@ short pesquisar_dado(STRING* chave, short pagina, ARV_B* arvore) {
     }
 }
 
+//inicia a pesquisa de uma chave na arvore b, e imprime o registro correspondente se a chave for encontrada
 void pesquisar_chave(STRING* chave, ARV_B* arvore, FILE* arq_dados) {
     short contrasenha;
     if (arvore->raiz != -1) {
         fseek(arvore->arq, rrn_converter(arvore->raiz), SEEK_SET);
+        //chama a funcao pesquisar_dado para procurar a chave na arvore b;
+        //o resultado da busca eh armazenado em contrasenha
         if ((contrasenha == pesquisar_dado(chave, arvore->raiz, arvore->arq)) != -1) {
             PAGINA pag;
             fseek(arvore->arq, rrn_converter(contrasenha/10), SEEK_SET);
