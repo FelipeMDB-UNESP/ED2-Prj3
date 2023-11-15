@@ -21,7 +21,7 @@ size_t rrn_converter(short ponteiro) {
 
 void extrair_pagina(PAGINA* pag, ARV_B* arvore) {
 
-    size_t endereco = rrn_converter();
+    size_t endereco = rrn_converter(arvore->raiz);
     fseek(arvore->arq, endereco, SEEK_SET);
     fread(pag, sizeof(PAGINA), 1, arvore->arq);
 
