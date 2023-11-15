@@ -166,7 +166,7 @@ void pesquisar_chave(STRING* chave, FILE* arq_dados, ARV_B* arvore) {
             extrair_pagina(&pag, arvore);
             imprimir_registro(pag.dado[contrasenha%10].endereco, arq_dados);
         } else {
-            printf("znChave nao encontrada: %s.\n", *chave);
+            printf("\nChave nao encontrada: %s.\n", *chave);
         }
     } else {
         printf("\nChave nao encontrada: %s.\n", *chave);
