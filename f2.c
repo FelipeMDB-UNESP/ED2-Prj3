@@ -63,7 +63,7 @@ void imprimir_registro(size_t endereco, FILE* arquivoDados) {
 
 void listar_pagina(FILE* arq_dados, ARV_B* arvore) {
     PAGINA pag;
-    extrair_pagina(&pag,arvore);
+    extrair_pagina(&pag, arvore);
 
     if (pag.ponteiro[0] !=-1) {
         fseek(arvore->arq, rrn_converter(pag.ponteiro[0]), SEEK_SET);
@@ -101,27 +101,74 @@ void listar_dados(FILE* arq_dados, ARV_B* arvore) {
     }
 }
 
-short pesquisar_dado(STRING* chave, ARV_B* arvore) {
+short pesquisar_dado(STRING* chave, short pagina, ARV_B* arvore) {
     PAGINA pag;
-    extrair_pagina(&pag,arvore);
+    extrair_pagina(&pag, arvore);
     
     if(strcpm(chave, pag.dado[0].string) == -1)  {
-        fseek(arvore->arq,rrn_converter(pag.ponteiro[0]),SEEK_SET);
-        return pesquisar_dado(chave,arvore);
+        if (pag.ponteiro[0] != -1) {
+            fseek(arvore->arq, rrn_converter(pag.ponteiro[0]), SEEK_SET);
+            return pesquisar_dado(chave, pag.ponteiro[0], arvore);
+        } else {
+            return -1;
+        }
     }
-    if(strcpm(chave, pag.dado[0].string) == 0)
-        return 
+
+    if(strcpm(chave, pag.dado[0].string) == 0) {
+        printf("\nChave encontrada: %s. (Pag: %d | Pos: %d)\n", chave, pagina, 0);
+        return pagina*10;
+    }
+
+    if(strcpm(chave, pag.dado[1].string) == -1)  {
+        if (pag.ponteiro[1] != -1) {
+            fseek(arvore->arq, rrn_converter(pag.ponteiro[1]), SEEK_SET);
+            return pesquisar_dado(chave, pag.ponteiro[1], arvore);
+        } else {
+            return -1;
+        }
+    }
+
+    if(strcpm(chave, pag.dado[1].string) == 0) {
+        printf("\nChave encontrada: %s. (Pag: %d | Pos: %d)\n", chave, pagina, 1);
+        return pagina*10 + 1;
+    }
+
+    if(strcpm(chave, pag.dado[2].string) == -1)  {
+        if (pag.ponteiro[2] != -1) {
+            fseek(arvore->arq, rrn_converter(pag.ponteiro[2]), SEEK_SET);
+            return pesquisar_dado(chave, pag.ponteiro[2], arvore);
+        } else {
+            return -1;
+        }
+    }
+
+    if(strcpm(chave, pag.dado[2].string) == 0) {
+        printf("\nChave encontrada: %s. (Pag: %d | Pos: %d)\n", chave, pagina, 2);
+        return pagina*10 + 2;
+    }
+
+
+    if (pag.ponteiro[3] != -1) {
+        fseek(arvore->arq, rrn_converter(pag.ponteiro[3]), SEEK_SET);
+        return pesquisar_dado(chave, pag.ponteiro[3], arvore);
+    } else {
+        return -1;
+    }
 }
 
 void pesquisar_chave(STRING* chave, FILE* arq_dados, ARV_B* arvore) {
+    short contrasenha;
     if (arvore->raiz != -1) {
         fseek(arvore->arq, rrn_converter(arvore->raiz), SEEK_SET);
-        if () {
-
+        if ((contrasenha == pesquisar_dado(chave, arvore->raiz, arvore->arq)) != -1) {
+            PAGINA pag;
+            fseek(arvore->arq, rrn_converter(contrasenha/10), SEEK_SET);
+            extrair_pagina(&pag, arvore);
+            imprimir_registro(pag.dado[contrasenha%10].endereco, arq_dados);
         } else {
-            printf("Chave nao encontrada: %s.", *chave);
+            printf("znChave nao encontrada: %s.\n", *chave);
         }
     } else {
-        printf("Chave nao encontrada: %s.", *chave);
+        printf("\nChave nao encontrada: %s.\n", *chave);
     }
 }
