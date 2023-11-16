@@ -201,6 +201,13 @@ int tam_pasta(PASTA* pst) {
     return i;
 }
 
+int tam_chaves(PARAGRAFO* parag) {
+    int i;
+    for (i=0; (*parag)[i] != NULL; i++) {
+    }
+    return i;
+}
+
 #pragma endregion tamanho_alocacoes_dinamicas
 
 #pragma region insercao_alocacoes_dinamicas
@@ -446,6 +453,7 @@ int main(int argc, char **argv)
 
     //quantidade de dados no arquivo insere.bin
     int tam;
+    int tamChaves;
     //pasta de registros, ponteiro para registros
     PASTA pasta;
     //basicamente um ponteiro para chaves
@@ -529,6 +537,7 @@ int main(int argc, char **argv)
             fclose(bTree);
             break;
         case 3:
+            //Pesquisar cliente - busca na árvore
             if ((arq = fopen(mainFile, "r+b")) == NULL)
             {
                 printf(makingFileMsg);
@@ -547,18 +556,26 @@ int main(int argc, char **argv)
                     return 0;
                 }
             }
-            //Pesquisar cliente - busca na árvore
-            if (currentSearch < totalSearch){
-                Search(arq, bTree, rootRRN, searchKey[currentSearch]);
+            if (load_de_arquivos) {
+                int posChave;
+                printf("Qual a posicao da chave que voce deseja pesquisar? 1-%d\n",tamChaves-1);
+                scanf(" %d", &posChave);
+                printf("Pesquisando a chave %s.......\n", chaves[posChave-1]);
+
+                Search(arq, bTree, rootRRN, chaves[posChave-1]);
                 currentSearch++;
+                fclose(arq);
+                fclose(bTree);
             }
-            fclose(arq);
-            fclose(bTree);
+            else {
+                    printf("Arquivos ainda nao foram carregados!\n");
+            } 
             break;
         case 4:
             pasta = carregar_dados("insere.bin");
             tam = tam_pasta(&pasta);
             chaves = carregar_chaves("busca.bin");
+            tamChaves = tam_chaves(&chaves);
             load_de_arquivos = true;
             break;
         case 0:
@@ -696,9 +713,9 @@ void printReg(registro reg)
 {
     printf("\n===============RESULTADO===============\n");
     printf("    Codigo cliente: %s\n", reg.codCliente);
-    printf("      Codigo Filme: %s\n", reg.codVeiculo);
+    printf("    Codigo Veiculo: %s\n", reg.codVeiculo);
     printf("      Nome Cliente: %s\n", reg.nomeCliente);
-    printf("        Nome Filme: %s\n", reg.nomeVeiculo);
+    printf("      Nome Veiculo: %s\n", reg.nomeVeiculo);
     printf("Quantidade de dias: %d\n", reg.quantDias);
     printf("=======================================\n");
 }
