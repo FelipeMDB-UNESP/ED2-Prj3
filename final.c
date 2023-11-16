@@ -1,38 +1,17 @@
-//André Nogueira Dias
-//Felipe de Britto
-//Rafael Daiki
-//Mestre Big Ryan
+//Andre Luis Dias Nogueira
+//Felipe Melchior de Britto
+//Rafael Daiki Kaneko
+//Ryan Hideki Tadeo Guimaraes
 
-//Libs
 #include "header.h"
+#define MAXCHAVES 3
+#define CHAVE_NULA "##################"
 
-//Constantes
-#define MAXKEYS 3 //Arvore-b ordem 4
-#define NULL_KEY "##################"
-
-//nome dos arquivos
-#define fileIn "insere.bin"
-#define keyIn "busca.bin"
-#define countFile "indicesAux.bin"
-#define treeFile "indicesFinal.bin"
-#define mainFile "dados.bin"
-
-//String de mensagens
-#define errStr "Erro ao fechar o arquivo!"
-#define errOpenFile "\nErro ao abrir o arquivo!\n"
-#define errReadF "\nErro ao ler o arquivo!\n"
-#define makingFileMsg "\nCriando arquivo de dados...\n"
-#define errMakeFile "\nErro ao criar arquivo!"
-#define duplicateMsg "\nERRO: Chave %s duplicada"
-#define splitMsg "\nDivisao de no!"
-#define promotedKeyMsg "\nChave %s promovida"
-#define sucessMsg "\nChave %s inserida com sucesso"
-#define emptyData "\nSem registro para inserir"
-#define treeEmptyMsg "\nSem dados para percorrer!"
-#define searchingMSG "\nListando todos os clientes...\n"
-#define notFound "\nChave %s nao encontrada\n"
-#define keyFound "\nChave %s encontrada, pagina %d, posicao %d\n"
-
+//arquivos
+#define arq_arvore_b "indices_arvore_b.bin"
+#define arq_principal "dados.bin"
+#define dados_para_inserir "insere.bin"
+#define dados_para_buscar "busca.bin"
 
 typedef struct
 {
@@ -41,57 +20,52 @@ typedef struct
     char nomeCliente[50];
     char nomeVeiculo[50];
     int quantDias;
-} registro;
+} DADO;
 
 typedef struct
 {
-    char keyStr[18]; //chave = string concatenada de CodCli + CodF
-    int rrn;        //rrn para registro no principal
-} prmKey;
+    char chave_primaria[18]; //chave primaria = string concatenada de CodCli + CodF
+    int rrn;        //rrn do item
+} CHAVE_PRIMARIA;
 
 typedef struct
 {
-    short keycount;
-    prmKey key[MAXKEYS];
-    short child[MAXKEYS + 1]; //rrns para paginas
-} page;
+    short qtd_indices;
+    CHAVE_PRIMARIA chave[MAXCHAVES];
+    short filho[MAXCHAVES + 1]; //rrns para paginas
+} PAGINA_ARVORE;
 
-enum isPromoted
+enum PROMOCAO
 {
-    NO,
-    YES,
-    DUP
+    NAO,
+    SIM,
+    DUPLICADO
 };
 
 //Protótipos
 int Menu();
 
-registro *GetReg(int *num, int prox); //retorna vetor de registro a ser inserido.
-char **GetSearchKeys(int *num, int prox);
-
-void GetCounters(int *nexData, int *nextSearch); //Atualiza contadores de registro e busca utilizadas.
-void SetCounters(int nextData, int nextSearch);
-void AddReg(FILE *dataFile, FILE **bTree, registro reg, short *rootRRN); //Adicona um registro no arquivo principal e arvore b
-void printReg(registro reg);                                             //Mostra as informações de um registro
-void InOrdem(FILE *arq, FILE *bTree, int rrn);                           //percurso inOrdem
-void printRegRRN(FILE *arq, int rrn);                                    //imprime registro dado o RRN
-void Search(FILE *arq, FILE *bTree, int rrn, char *key);                 //pesquisa chave na arvore
+void inserir_registro(FILE *dataFile, FILE **arvore_b, DADO reg, short *raizRRN); //Adicona um DADO no arquivo principal e arvore b
+void printar_registro(DADO reg);                                             //Mostra as informações de um DADO
+void percurso_in_ordem(FILE *arq, FILE *arvore_b, int rrn);                           //percurso inOrdem
+void printar_registro_e_rrn(FILE *arq, int rrn);                                    //imprime DADO dado o RRN
+void buscar(FILE *arq, FILE *arvore_b, int rrn, char *chave);                 //pesquisa chave na arvore
 
 //Arvore-B
-int AddIndex(FILE **bTree, prmKey key, short *rootRRN); //Adiciona registro na arvore, cria arvore se não existe
-void WritePage(FILE *bTree, short rrn, page *pag);      //escreve pag no arquivo
-void PageInit(page *pag);                               //inicializa uma pagina
-void PutRoot(FILE *bTree, short root);                  //atualiza header com raiz da arvore
-void ReadPage(FILE *bTree, short rrn, page *pag);
-void InsertInPage(FILE *bTree, prmKey key, short rrnChild, page *pag);
-void Split(FILE *bTree, prmKey key, short rChild, page *oldPag, prmKey *promotedKey, short *promotedRChild, page *newPage);
+int adicionar_index(FILE **arvore_b, CHAVE_PRIMARIA chave, short *raizRRN); //Adiciona DADO na arvore, cria arvore se não existe
+void escrever_pagina(FILE *arvore_b, short rrn, PAGINA_ARVORE *pag);      //escreve pag no arquivo
+void inicializar_pagina(PAGINA_ARVORE *pag);                               //inicializa uma pagina
+void posicionar_raiz(FILE *arvore_b, short raiz);                  //atualiza header com raiz da arvore
+void ler_pagina(FILE *arvore_b, short rrn, PAGINA_ARVORE *pag);
+void inserir_na_pagina(FILE *arvore_b, CHAVE_PRIMARIA chave, short rrnChild, PAGINA_ARVORE *pag);
+void separar(FILE *arvore_b, CHAVE_PRIMARIA chave, short filho_direito, PAGINA_ARVORE *pagina_antiga, CHAVE_PRIMARIA *chave_promovida, short *filho_promovido_direito, PAGINA_ARVORE *nova_pagina);
 
-short Insert(FILE *bTree, short rrn, prmKey key, short *promotedChild, prmKey *promotedKey); //insere Chave na arvore
-short GetRoot(FILE *bTree);                                                                  //retorna raiz da arvore
-short GetPage(FILE *bTree);                                                                  //Retorna RRN da proxima pagina
-short CreateTree(FILE **bTree, prmKey Key);                                                  //cria a arvore
-short CreateRoot(FILE *bTree, prmKey key, short left, short right);                          //Cria raiz
-short SearchNode(prmKey key, page *pag, short *pos);
+short inserir(FILE *arvore_b, short rrn, CHAVE_PRIMARIA chave, short *filho_promovido, CHAVE_PRIMARIA *chave_promovida); //insere Chave na arvore
+short obter_raiz(FILE *arvore_b);                                                                  //retorna raiz da arvore
+short obter_pagina(FILE *arvore_b);                                                                  //Retorna RRN da proxima pagina
+short criar_arvore(FILE **arvore_b, CHAVE_PRIMARIA chave);                                                  //cria a arvore
+short criar_raiz(FILE *arvore_b, CHAVE_PRIMARIA chave, short esquerda, short direita);                          //Cria raiz
+short procurar_noh(CHAVE_PRIMARIA chave, PAGINA_ARVORE *pag, short *pos);
 
 
 //Aloca espaço para um int
@@ -115,7 +89,7 @@ PARAGRAFO criar_paragrafo() {
     return par;
 }
 
-//Aloca espaço para um registro de dados
+//Aloca espaço para um DADO de dados
 REGISTRO criar_registro() {
     REGISTRO reg = (REGISTRO) malloc(sizeof(DADOS));
     reg->codCliente = criar_string();
@@ -155,7 +129,7 @@ void limpar_parafrago(PARAGRAFO* par) {
     free(*par);
 }
 
-//Limpar a alocação de um registro de dados
+//Limpar a alocação de um DADO de dados
 void limpar_registro(REGISTRO* reg) {
     limpar_string(&(*reg)->codCliente);
     limpar_string(&(*reg)->codVeiculo);
@@ -256,7 +230,7 @@ void add_string_paragrafo(PARAGRAFO* par, STRING* str) {
     //Passa o novo paragrafo criado ao endereço recebido como parâmetro
     *par = novoParagrafo;
 }
-// Adiciona um registro no vetor de registros
+// Adiciona um DADO no vetor de registros
 void add_registro_pasta(PASTA* pst, REGISTRO* reg) {
     int i;
     int tam = tam_pasta(pst);
@@ -267,7 +241,7 @@ void add_registro_pasta(PASTA* pst, REGISTRO* reg) {
         novaPasta[i] = (*pst)[i];
     }
 
-    novaPasta[tam] = *reg; // Adiciona o registro no fim da pasta
+    novaPasta[tam] = *reg; // Adiciona o DADO no fim da pasta
     novaPasta[tam+1] = NULL;
 
     free(*pst);
@@ -311,7 +285,7 @@ FILE* abrir_arquivo_binario(STRING nome_do_arquivo) {
 
 //Funcoes de trabalho com strings de tamanho variavel.
 
-// Carrega os dados e retorna um vetor de registro
+// Carrega os dados e retorna um vetor de DADO
 PASTA carregar_dados(STRING nomeArquivoInsercao) {
     FILE* arq;
     arq = abrir_arquivo_binario(nomeArquivoInsercao);
@@ -323,33 +297,33 @@ PASTA carregar_dados(STRING nomeArquivoInsercao) {
     int cont;
     char caractere;
     PASTA pasta = criar_pasta();
-    REGISTRO registro;
+    REGISTRO DADO;
     bool fim_de_arquivo = false;
 
     STRING inteiro;
     // Faz a leitura dos registros do arquivo e adiciona num vetor de Registros
     while (!fim_de_arquivo) {
         
-        registro = criar_registro();
+        DADO = criar_registro();
         inteiro = criar_string();
 
         while(((cont = fread(&caractere,sizeof(char),1,arq)) != 0) && caractere != '\0'){
-            add_caractere_string(&(registro->codCliente),caractere);
+            add_caractere_string(&(DADO->codCliente),caractere);
         }
 
         while(((cont = fread(&caractere,sizeof(char),1,arq)) != 0) && caractere != '\0'){
-            add_caractere_string(&(registro->codVeiculo),caractere);
+            add_caractere_string(&(DADO->codVeiculo),caractere);
         }
 
         while(((cont = fread(&caractere,sizeof(char),1,arq)) != 0) && caractere != '\0'){
-            add_caractere_string(&(registro->nomeCliente),caractere);
+            add_caractere_string(&(DADO->nomeCliente),caractere);
         }
 
         while (((cont = fread(&caractere,sizeof(char),1,arq)) != 0) && caractere == '\0') {}
 
-        add_caractere_string(&registro->nomeVeiculo,caractere);
+        add_caractere_string(&DADO->nomeVeiculo,caractere);
         while(((cont = fread(&caractere,sizeof(char),1,arq)) != 0) && caractere != '\0'){
-            add_caractere_string(&registro->nomeVeiculo,caractere);
+            add_caractere_string(&DADO->nomeVeiculo,caractere);
         }
 
         while (((cont = fread(&caractere,sizeof(char),1,arq)) != 0) && caractere == '\0') {}
@@ -362,14 +336,14 @@ PASTA carregar_dados(STRING nomeArquivoInsercao) {
         while (((cont = fread(&caractere,sizeof(char),1,arq)) != 0) && caractere == '\0') {}
         fseek(arq,(-1)*sizeof(char),SEEK_CUR);
 
-        *(registro->quantDias) = atoi(inteiro);
+        *(DADO->quantDias) = atoi(inteiro);
         limpar_string(&inteiro);
 
         if (cont==0) {
             fim_de_arquivo = true;
         }
         
-        add_registro_pasta(&pasta,&registro);
+        add_registro_pasta(&pasta,&DADO);
     }
     fclose(arq);
     return pasta;
@@ -418,38 +392,11 @@ PARAGRAFO carregar_chaves(STRING nomeArquivoChaves) {
     return paragrafo;
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
 int main(int argc, char **argv)
 {
-    int nexData = 0, nextSearch = 0;
-    GetCounters(&nexData, &nextSearch);
-
-    int totalData = -1, currentData = 0;
-    registro *dados = GetReg(&totalData, nexData);
-    if (dados == NULL) //Erro ao abrir arquivo de dados
-        return 0;
-
-    char **searchKey = NULL;
-    int totalSearch = -1, currentSearch = 0;
-    searchKey = GetSearchKeys(&totalSearch, nextSearch);
-    if (searchKey == NULL) //Erro ao abrir arquivo com chaves
-        return 0;
-
-    short rootRRN = -1;
+    short raizRRN = -1;
     FILE *arq = NULL;
-    FILE *bTree = NULL;
-    
+    FILE *arvore_b = NULL;
 
     //quantidade de dados no arquivo insere.bin
     int tam;
@@ -473,102 +420,101 @@ int main(int argc, char **argv)
             //Inserir
             if (load_de_arquivos)
             {
-                if ((arq = fopen(mainFile, "r+b")) == NULL)
+                if ((arq = fopen(arq_principal, "r+b")) == NULL)
                 {
-                    printf(makingFileMsg);
-                    if ((arq = fopen(mainFile, "a+b")) == NULL)
+                    printf("\nCriando arquivo de dados...\n");
+                    if ((arq = fopen(arq_principal, "a+b")) == NULL)
                     {
-                        printf(errMakeFile);
+                        printf("\nErro ao criar arquivo!");
                         return 0;
                     }
                 }
-                if ((bTree = fopen(treeFile, "r+b")) != NULL)
+                if ((arvore_b = fopen(arq_arvore_b, "r+b")) != NULL)
                 {
-                    rootRRN = GetRoot(bTree);
-                    if (rootRRN == -1)
+                    raizRRN = obter_raiz(arvore_b);
+                    if (raizRRN == -1)
                     {
-                        printf(errReadF);
+                        printf("\nErro ao ler o arquivo!\n");
                         return 0;
                     }
                 }
                 printf("\nDigite um numero entre 1 e %d\n", tam);
                 int posRegistro;
-                printf("Qual o indice do registro que deseja inserir?");
+                printf("\nQual o indice do DADO que deseja inserir?\n");
                 scanf("%d", &posRegistro);
 
-                registro reg;
+                DADO reg;
                 strcpy(reg.codCliente, pasta[posRegistro-1]->codCliente);
                 strcpy(reg.codVeiculo, pasta[posRegistro-1]->codVeiculo);
                 strcpy(reg.nomeCliente, pasta[posRegistro-1]->nomeCliente);
                 strcpy(reg.nomeVeiculo, pasta[posRegistro-1]->nomeVeiculo);
                 reg.quantDias = *(pasta[posRegistro-1]->quantDias);
 
-                AddReg(arq, &bTree, reg, &rootRRN);
+                inserir_registro(arq, &arvore_b, reg, &raizRRN);
                 fclose(arq);
-                fclose(bTree);
+                fclose(arvore_b);
             }
             else {
-                    printf("Arquivos ainda nao foram carregados!\n");
+                    printf("\nArquivos ainda nao foram carregados!\n");
                 } 
             break;
         case 2:
             //Listar dados - percurso in ordem
-            if ((arq = fopen(mainFile, "r+b")) == NULL)
+            if ((arq = fopen(arq_principal, "r+b")) == NULL)
             {
-                printf(makingFileMsg);
-                if ((arq = fopen(mainFile, "a+b")) == NULL)
+                printf("\nCriando arquivo de dados...\n");
+                if ((arq = fopen(arq_principal, "a+b")) == NULL)
                 {
-                    printf(errMakeFile);
+                    printf("\nErro ao criar arquivo!");
                     return 0;
                 }
             }
-            if ((bTree = fopen(treeFile, "r+b")) != NULL)
+            if ((arvore_b = fopen(arq_arvore_b, "r+b")) != NULL)
             {
-                rootRRN = GetRoot(bTree);
-                if (rootRRN == -1)
+                raizRRN = obter_raiz(arvore_b);
+                if (raizRRN == -1)
                 {
-                    printf(errReadF);
+                    printf("\nErro ao ler o arquivo!\n");
                     return 0;
                 }
             }
-            printf(searchingMSG);
-            InOrdem(arq, bTree, rootRRN);
+            printf("\nLista dos dados dos clientes:\n");
+            percurso_in_ordem(arq, arvore_b, raizRRN);
             fclose(arq);
-            fclose(bTree);
+            fclose(arvore_b);
             break;
         case 3:
             //Pesquisar cliente - busca na árvore
-            if ((arq = fopen(mainFile, "r+b")) == NULL)
+            if ((arq = fopen(arq_principal, "r+b")) == NULL)
             {
-                printf(makingFileMsg);
-                if ((arq = fopen(mainFile, "a+b")) == NULL)
+                printf("\nCriando arquivo de dados...\n");
+                if ((arq = fopen(arq_principal, "a+b")) == NULL)
                 {
-                    printf(errMakeFile);
+                    printf("\nErro ao criar arquivo!");
                     return 0;
                 }
             }
-            if ((bTree = fopen(treeFile, "r+b")) != NULL)
+            if ((arvore_b = fopen(arq_arvore_b, "r+b")) != NULL)
             {
-                rootRRN = GetRoot(bTree);
-                if (rootRRN == -1)
+                raizRRN = obter_raiz(arvore_b);
+                if (raizRRN == -1)
                 {
-                    printf(errReadF);
+                    printf("\nErro ao ler o arquivo!\n");
                     return 0;
                 }
             }
             if (load_de_arquivos) {
                 int posChave;
-                printf("Qual a posicao da chave que voce deseja pesquisar? 1-%d\n",tamChaves-1);
+                printf("\nQual a posicao da chave que voce deseja pesquisar? 1-%d\n",tamChaves-1);
                 scanf(" %d", &posChave);
-                printf("Pesquisando a chave %s.......\n", chaves[posChave-1]);
+                printf("\nPesquisando a chave %s.......\n", chaves[posChave-1]);
 
-                Search(arq, bTree, rootRRN, chaves[posChave-1]);
-                currentSearch++;
+                buscar(arq, arvore_b, raizRRN, chaves[posChave-1]);
                 fclose(arq);
-                fclose(bTree);
+                fclose(arvore_b);
             }
             else {
-                    printf("Arquivos ainda nao foram carregados!\n");
+                    printf("\nArquivos ainda nao foram carregados!\n");
             } 
             break;
         case 4:
@@ -582,16 +528,6 @@ int main(int argc, char **argv)
             exit(0);
         }
     } while (option != 5);
-    //Salva os contadores
-    SetCounters(nexData + currentData, nextSearch + currentSearch);
-
-    //Liberar memória
-    free(dados);
-
-    for (int i = 0; i < totalSearch; i++)
-        free(searchKey[i]);
-
-    free(searchKey);
 
     return 0;
 }
@@ -601,115 +537,19 @@ int Menu()
     int opt = -1;
     do
     {
-        printf("\n============MENU============\n");
-        printf("Selecione uma opcao:\n");
+        printf("\nSelecione uma opcao:\n");
         printf("1- Inserir Registro\n");
         printf("2- Listar dados\n");
         printf("3- Pesquisar por chave primaria\n");
         printf("4- Carregar dados\n");
         printf("0- Sair\n");
-        printf("============================\n");
         scanf("%d", &opt);
     } while (opt < 0 || opt > 4);
 
     return opt;
 }
 
-void GetCounters(int *nexData, int *nextSearch)
-{
-    FILE *in;
-    if ((in = fopen(countFile, "rb")) == NULL)
-    {
-        //se não existe, indices zerados.
-        *nexData = 0;
-        *nextSearch = 0;
-        return;
-    }
-    if (fread(nexData, sizeof(int), 1, in) == 0)
-        *nexData = 0;
-    if (fread(nextSearch, sizeof(int), 1, in) == 0)
-        *nextSearch = 0;
-
-    if (fclose(in) == EOF)
-        printf(errStr);
-}
-
-void SetCounters(int nextData, int nextSearch)
-{
-    FILE *in;
-    if ((in = fopen(countFile, "w+b")) == NULL)
-    {
-        printf(errOpenFile);
-        return;
-    }
-    fwrite(&nextData, sizeof(int), 1, in);
-    fwrite(&nextSearch, sizeof(int), 1, in);
-
-    if (fclose(in) == EOF)
-        printf(errStr);
-}
-
-registro *GetReg(int *num, int prox)
-{
-    FILE *in;
-    if ((in = fopen(fileIn, "r+b")) == NULL)
-    {
-        printf(errOpenFile);
-        return NULL;
-    }
-
-    //pula registros ja utilizados
-    fseek(in, prox * sizeof(registro), 0);
-
-    registro *dados = (registro *)malloc(sizeof(registro));
-
-    *num = 0; //quantidade de elementos no vetor
-    while (fread(&(dados[*num]), sizeof(registro), 1, in))
-    {
-        (*num)++;
-        dados = realloc(dados, ((*num) + 1) * sizeof(registro));
-    }
-
-    if (fclose(in) == EOF)
-        printf(errStr);
-
-    return dados;
-}
-
-char **GetSearchKeys(int *num, int prox)
-{
-    FILE *in;
-    if ((in = fopen(keyIn, "r+b")) == NULL)
-    {
-        printf(errOpenFile);
-        return NULL;
-    }
-
-    fseek(in, prox * sizeof(char) * 3 * 2, 0); //3 char para cada código = 6 char para chave primaria
-
-    char **dados = (char **)malloc(sizeof(char *));
-    *dados = (char *)malloc(sizeof(char) * 5);
-
-    *num = 0; //quantidade de elementos no vetor
-    char temp[3];
-    while (fread(temp, sizeof(char), 3, in)) //le primeiro codigo
-    {
-        strcpy(dados[*num], temp);
-        fread(temp, sizeof(char), 3, in); //le segundo codigo
-        strcat(dados[*num], temp);
-
-        (*num)++;
-        dados = realloc(dados, ((*num) + 1) * sizeof(char *)); //aumenta matriz
-        dados[*num] = (char *)malloc(sizeof(char) * 5);        // vetor
-    }
-
-    if (fclose(in) == EOF)
-        printf(errStr);
-
-    return dados;
-}
-
-void printReg(registro reg)
+void printar_registro(DADO reg)
 {
     printf("\n===============RESULTADO===============\n");
     printf("    Codigo cliente: %s\n", reg.codCliente);
@@ -720,86 +560,86 @@ void printReg(registro reg)
     printf("=======================================\n");
 }
 
-//mostra o Registro dado um RRN do registro
-void printRegRRN(FILE *arq, int rrn)
+//mostra o Registro dado um RRN do DADO
+void printar_registro_e_rrn(FILE *arq, int rrn)
 {
-    long bof = (long)rrn * (long)sizeof(registro);
+    long bof = (long)rrn * (long)sizeof(DADO);
     fseek(arq, bof, 0);
-    registro temp;
-    fread(&temp, sizeof(registro), 1, arq);
-    printReg(temp);
+    DADO temp;
+    fread(&temp, sizeof(DADO), 1, arq);
+    printar_registro(temp);
 }
 
 //Busca uma chave
-void Search(FILE *arq, FILE *bTree, int rrn, char *key)
+void buscar(FILE *arq, FILE *arvore_b, int rrn, char *chave)
 {
     if (rrn < 0)
     {
-        printf(notFound, key);
+        printf("\nA chave %s nao foi localizada\n", chave);
         return;
     }
 
-    page currentPage;
-    ReadPage(bTree, rrn, &currentPage);
+    PAGINA_ARVORE pagina_atual;
+    ler_pagina(arvore_b, rrn, &pagina_atual);
     int i;
-    for (i = 0; i < MAXKEYS; i++)
+    for (i = 0; i < MAXCHAVES; i++)
     {
-        int comp = strcmp(key, currentPage.key[i].keyStr);
+        int comp = strcmp(chave, pagina_atual.chave[i].chave_primaria);
 
         if (comp < 0)
-            return Search(arq, bTree, currentPage.child[i], key); //se for menor, pesquisa a esquerda
+            return buscar(arq, arvore_b, pagina_atual.filho[i], chave); //se for menor, pesquisa a esquerda
         else if (comp == 0)
         {
-            printf(keyFound, key, rrn, i);
-            printRegRRN(arq, currentPage.key[i].rrn); //se for igual, encontrou
+            printf("\nA chave %s foi encontrada em pagina %d | posicao %d\n", chave, rrn, i);
+            printar_registro_e_rrn(arq, pagina_atual.chave[i].rrn); //se for igual, encontrou
             return;
         }
     }
-    return Search(arq, bTree, currentPage.child[i], key); //pesquisa a direita da ultima chave
+    return buscar(arq, arvore_b, pagina_atual.filho[i], chave); //pesquisa a direita da ultima chave
 }
 
 //Percorre a árvo in-ordem e mostra os regsitros ordenados
-void InOrdem(FILE *arq, FILE *bTree, int rrn)
+void percurso_in_ordem(FILE *arq, FILE *arvore_b, int rrn)
 {
     //percorre esquerda; raiz; direita
 
     if (rrn < 0)
     {
-        printf(treeEmptyMsg);
+        printf("\nArvore vazia!");
         return;
     }
 
-    page currentPage;
-    ReadPage(bTree, rrn, &currentPage); //le pagina
+    PAGINA_ARVORE pagina_atual;
+    ler_pagina(arvore_b, rrn, &pagina_atual); //le pagina
 
     int i;
-    for (i = 0; i < MAXKEYS; i++)
+    for (i = 0; i < MAXCHAVES; i++)
     {
-        if (currentPage.child[i] != -1) //percorre esquerda da chave
-            InOrdem(arq, bTree, currentPage.child[i]);
+        if (pagina_atual.filho[i] != -1) //percorre esquerda da chave
+            percurso_in_ordem(arq, arvore_b, pagina_atual.filho[i]);
 
-        if (currentPage.key[i].rrn == -1) //se posição vazia
+        if (pagina_atual.chave[i].rrn == -1) //se posição vazia
             return;
 
-        printRegRRN(arq, currentPage.key[i].rrn); //mostra a chave
+        printar_registro_e_rrn(arq, pagina_atual.chave[i].rrn); //mostra a chave
         //percorre direita que será esquerda na próxima iteração
     }
-    if (currentPage.child[i] != -1)
-        InOrdem(arq, bTree, currentPage.child[i]); //percorre ultimo filho a direita
+    if (pagina_atual.filho[i] != -1)
+        percurso_in_ordem(arq, arvore_b, pagina_atual.filho[i]); //percorre ultimo filho a direita
 }
 
-//Adiciona registro ao indice e arquivo principal
-void AddReg(FILE *dataFile, FILE **bTree, registro reg, short *rootRRN)
+//Adiciona DADO ao indice e arquivo principal
+void inserir_registro(FILE *dataFile, FILE **arvore_b, DADO reg, short *raizRRN)
 {
     fseek(dataFile, 0, 2);                                 //vai para fim do arquivo
-    int regRRN = (int)(ftell(dataFile) / sizeof(registro)); //rrn para registro no arquivo principal
+    int regRRN = (int)(ftell(dataFile) / sizeof(DADO)); //rrn para DADO no arquivo principal
 
-    prmKey key;
-    key.rrn = regRRN;
-    strcpy(key.keyStr, reg.codCliente);
-    strcat(key.keyStr, reg.codVeiculo);
+    CHAVE_PRIMARIA chave;
+    chave.rrn = regRRN;
+    strcpy(chave.chave_primaria, reg.codCliente);
+    strcat(chave.chave_primaria, reg.codVeiculo);
 
-    if (AddIndex(bTree, key, rootRRN) != DUP){        //adiciona chave do registro na árvore B
+    if (adicionar_index(arvore_b, chave, raizRRN) != DUPLICADO){        //adiciona chave do DADO na árvore B
         fwrite(reg.codCliente, sizeof(char), sizeof(reg.codCliente), dataFile);
         fwrite(reg.codVeiculo, sizeof(char), sizeof(reg.codVeiculo), dataFile);
         fwrite(reg.nomeCliente, sizeof(char), sizeof(reg.nomeCliente), dataFile);
@@ -809,232 +649,233 @@ void AddReg(FILE *dataFile, FILE **bTree, registro reg, short *rootRRN)
 }
 
 //Arvore-B
-//retorna YES caso ocorra inserção, retorna DUP caso duplicado;
-int AddIndex(FILE **bTree, prmKey key, short *rootRRN)
+//retorna SIM caso ocorra inserção, retorna DUPLICADO caso duplicado;
+int adicionar_index(FILE **arvore_b, CHAVE_PRIMARIA chave, short *raizRRN)
 {
-    if (*bTree == NULL)
+    if (*arvore_b == NULL)
     {
-        *rootRRN = CreateTree(bTree, key);
-        printf(sucessMsg, key.keyStr);
-        return YES;
+        *raizRRN = criar_arvore(arvore_b, chave);
+        printf("\nA chave %s foi inserida com sucesso\n", chave.chave_primaria);
+        return SIM;
     }
 
     short promotedRRN = -1;
-    prmKey promotedKey;
+    CHAVE_PRIMARIA chave_promovida;
 
-    int promoted = Insert(*bTree, *rootRRN, key, &promotedRRN, &promotedKey);
-    if (promoted == YES)
-        *rootRRN = CreateRoot(*bTree, promotedKey, *rootRRN, promotedRRN);
+    int promovido = inserir(*arvore_b, *raizRRN, chave, &promotedRRN, &chave_promovida);
+    if (promovido == SIM)
+        *raizRRN = criar_raiz(*arvore_b, chave_promovida, *raizRRN, promotedRRN);
 
-    if (promoted == DUP)
-        return DUP;
+    if (promovido == DUPLICADO)
+        return DUPLICADO;
     else
     {
-        printf(sucessMsg, key.keyStr);
-        return YES;
+        printf("\nA chave %s foi inserida com sucesso\n", chave.chave_primaria);
+        return SIM;
     }
 }
 
-short GetRoot(FILE *bTree)
+short obter_raiz(FILE *arvore_b)
 {
-    short root = -1;
-    fseek(bTree, 0, 0);
-    if (fread(&root, sizeof(short), 1, bTree) == 0)
+    short raiz = -1;
+    fseek(arvore_b, 0, 0);
+    if (fread(&raiz, sizeof(short), 1, arvore_b) == 0)
     {
-        printf(errReadF);
+        printf("\nErro ao ler o arquivo!\n");
         return -1;
     }
-    return root;
+    return raiz;
 }
 
-short CreateTree(FILE **bTree, prmKey key)
+short criar_arvore(FILE **arvore_b, CHAVE_PRIMARIA chave)
 {
     short temp = -1;
-    if ((*bTree = fopen(treeFile, "w+b")) == NULL)
+    if ((*arvore_b = fopen(arq_arvore_b, "w+b")) == NULL)
     {
-        printf(errOpenFile);
+        printf("\nErro tentando abrir o arquivo!\n");
         return temp;
     }
-    fwrite(&temp, sizeof(short), 1, *bTree);
-    return CreateRoot(*bTree, key, -1, -1);
+    fwrite(&temp, sizeof(short), 1, *arvore_b);
+    return criar_raiz(*arvore_b, chave, -1, -1);
 }
 
-short CreateRoot(FILE *bTree, prmKey key, short left, short right)
+short criar_raiz(FILE *arvore_b, CHAVE_PRIMARIA chave, short esquerda, short direita)
 {
-    page pag;
-    short rrn = GetPage(bTree);
-    PageInit(&pag);
-    pag.key[0] = key;
-    pag.child[0] = left;
-    pag.child[1] = right;
-    pag.keycount = (short)1;
-    WritePage(bTree, rrn, &pag);
-    PutRoot(bTree, rrn);
+    PAGINA_ARVORE pag;
+    short rrn = obter_pagina(arvore_b);
+    inicializar_pagina(&pag);
+    pag.chave[0] = chave;
+    pag.filho[0] = esquerda;
+    pag.filho[1] = direita;
+    pag.qtd_indices = (short)1;
+    escrever_pagina(arvore_b, rrn, &pag);
+    posicionar_raiz(arvore_b, rrn);
     return rrn;
 }
 
-short GetPage(FILE *bTree)
+short obter_pagina(FILE *arvore_b)
 {
-    fseek(bTree, 0, 2);
-    long addr = ftell(bTree);
+    fseek(arvore_b, 0, 2);
+    long addr = ftell(arvore_b);
     addr -= (long)2;
-    return (addr > 0) ? (short)addr / sizeof(page) : 0;
+    return (addr > 0) ? (short)addr / sizeof(PAGINA_ARVORE) : 0;
 }
 
-short Insert(FILE *bTree, short rrn, prmKey key, short *promotedChild, prmKey *promotedKey)
+short inserir(FILE *arvore_b, short rrn, CHAVE_PRIMARIA chave, short *filho_promovido, CHAVE_PRIMARIA *chave_promovida)
 {
     if (rrn == -1)
     {
-        *promotedKey = key;
-        *promotedChild = -1;
-        return YES;
+        *chave_promovida = chave;
+        *filho_promovido = -1;
+        return SIM;
     }
-    page currentPage, newPage;
-    ReadPage(bTree, rrn, &currentPage);
+    PAGINA_ARVORE pagina_atual, nova_pagina;
+    ler_pagina(arvore_b, rrn, &pagina_atual);
 
     short pos;
-    int found = SearchNode(key, &currentPage, &pos);
-    if (found)
+    int encontrou = procurar_noh(chave, &pagina_atual, &pos);
+    if (encontrou)
     {
-        printf(duplicateMsg, key.keyStr);
-        return DUP;
+        printf("\nERRO: Chave %s duplicada\n", chave.chave_primaria);
+        return DUPLICADO;
     }
-    short promotedRRNRecursion;
-    prmKey promotedKeyRecursion;
-    short promoted = Insert(bTree, currentPage.child[pos], key, &promotedRRNRecursion, &promotedKeyRecursion);
+    short rrn_promovido_rec;
+    CHAVE_PRIMARIA chave_promovida_rec;
+    short promovido = inserir(arvore_b, pagina_atual.filho[pos], chave, &rrn_promovido_rec, &chave_promovida_rec);
 
-    if (promoted == DUP)
-        return DUP;
+    if (promovido == DUPLICADO)
+        return DUPLICADO;
 
-    if (!promoted)
-        return NO;
+    if (!promovido)
+        return NAO;
 
-    if (currentPage.keycount < MAXKEYS)
+    if (pagina_atual.qtd_indices < MAXCHAVES)
     {
-        InsertInPage(bTree, promotedKeyRecursion, promotedRRNRecursion, &currentPage);
-        WritePage(bTree, rrn, &currentPage);
-        return NO;
+        inserir_na_pagina(arvore_b, chave_promovida_rec, rrn_promovido_rec, &pagina_atual);
+        escrever_pagina(arvore_b, rrn, &pagina_atual);
+        return NAO;
     }
     else
     {
-        Split(bTree, promotedKeyRecursion, promotedRRNRecursion, &currentPage, promotedKey, promotedChild, &newPage);
-        WritePage(bTree, rrn, &currentPage); //Atualiza pagina atual
-        WritePage(bTree, *promotedChild, &newPage);
-        return YES;
+        separar(arvore_b, chave_promovida_rec, rrn_promovido_rec, &pagina_atual, chave_promovida, filho_promovido, &nova_pagina);
+        escrever_pagina(arvore_b, rrn, &pagina_atual); //Atualiza pagina atual
+        escrever_pagina(arvore_b, *filho_promovido, &nova_pagina);
+        return SIM;
     }
 }
 
-short SearchNode(prmKey key, page *pag, short *pos)
+short procurar_noh(CHAVE_PRIMARIA chave, PAGINA_ARVORE *pag, short *pos)
 {
     int i = 0;
-    for (i = 0; i < pag->keycount && strcmp(key.keyStr, pag->key[i].keyStr) > 0; i++)
+    for (i = 0; i < pag->qtd_indices && strcmp(chave.chave_primaria, pag->chave[i].chave_primaria) > 0; i++)
     {
         //nada;
     }
     *pos = i;
-    return (*pos < pag->keycount && strcmp(key.keyStr, pag->key[*pos].keyStr) == 0) ? YES : NO;
+    return (*pos < pag->qtd_indices && strcmp(chave.chave_primaria, pag->chave[*pos].chave_primaria) == 0) ? SIM : NAO;
 }
 
-void Split(FILE *bTree, prmKey key, short rChild, page *oldPag, prmKey *promotedKey, short *promotedRChild, page *newPage)
+void separar(FILE *arvore_b, CHAVE_PRIMARIA chave, short filho_direito, PAGINA_ARVORE *pagina_antiga, CHAVE_PRIMARIA *chave_promovida, short *filho_promovido_direito, PAGINA_ARVORE *nova_pagina)
 {
-    printf(splitMsg);
+    printf("\nDivisao de no!\n");
 
+    
+    CHAVE_PRIMARIA chave_atual[MAXCHAVES + 1];
+    short filho_atual[MAXCHAVES + 2];
     int j;
-    prmKey workKeys[MAXKEYS + 1];
-    short workChild[MAXKEYS + 2];
 
-    prmKey nullKey = {.keyStr="@@@@",.rrn=-1};
+    CHAVE_PRIMARIA chave_nula = {.chave_primaria="##################",.rrn=-1};
 
-    for (j = 0; j < MAXKEYS; j++)
+    for (j = 0; j < MAXCHAVES; j++)
     {
-        workKeys[j] = oldPag->key[j]; //copia chaves e filhos
-        workChild[j] = oldPag->child[j];
+        chave_atual[j] = pagina_antiga->chave[j]; //copia chaves e filhos
+        filho_atual[j] = pagina_antiga->filho[j];
 
-        oldPag->key[j] = nullKey; //apaga pagina antiga
-        oldPag->child[j] = -1;
+        pagina_antiga->chave[j] = chave_nula; //apaga pagina antiga
+        pagina_antiga->filho[j] = -1;
     }
-    workChild[j] = oldPag->child[j];
-    oldPag->child[j] = -1;
+    filho_atual[j] = pagina_antiga->filho[j];
+    pagina_antiga->filho[j] = -1;
 
 
-    for (j = MAXKEYS; strcmp(key.keyStr, workKeys[j - 1].keyStr) < 0 && j > 0; j--)
+    for (j = MAXCHAVES; strcmp(chave.chave_primaria, chave_atual[j - 1].chave_primaria) < 0 && j > 0; j--)
     {
-        workKeys[j] = workKeys[j - 1]; //insere nova pagina
-        workChild[j + 1] = workChild[j];
+        chave_atual[j] = chave_atual[j - 1]; //insere nova pagina
+        filho_atual[j + 1] = filho_atual[j];
     }
-    workKeys[j] = key;
-    workChild[j + 1] = rChild;
+    chave_atual[j] = chave;
+    filho_atual[j + 1] = filho_direito;
 
-    *promotedRChild = GetPage(bTree);
-    PageInit(newPage);
+    *filho_promovido_direito = obter_pagina(arvore_b);
+    inicializar_pagina(nova_pagina);
 
-    const int MINKEYS = (MAXKEYS + 1) / 2; //=2
+    const int MINIMO_CHAVES = (MAXCHAVES + 1) / 2; //=2
 
     //Separa 2 chaves para cada pagina
-    for (j = 0; j < MINKEYS; j++)
+    for (j = 0; j < MINIMO_CHAVES; j++)
     {
-        oldPag->key[j] = workKeys[j]; //copia metade inferior do vetor para oldPag
-        oldPag->child[j] = workChild[j];
+        pagina_antiga->chave[j] = chave_atual[j]; //copia metade inferior do vetor para pagina_antiga
+        pagina_antiga->filho[j] = filho_atual[j];
 
-        newPage->key[j] = workKeys[j + MINKEYS]; //copia metade superior vetor para newPage
-        newPage->child[j] = workChild[j + MINKEYS];
+        nova_pagina->chave[j] = chave_atual[j + MINIMO_CHAVES]; //copia metade superior vetor para nova_pagina
+        nova_pagina->filho[j] = filho_atual[j + MINIMO_CHAVES];
     }
     //ultimos ponteiros de filhos
-    newPage->child[MINKEYS] = workChild[j + MINKEYS];
+    nova_pagina->filho[MINIMO_CHAVES] = filho_atual[j + MINIMO_CHAVES];
 
     //remove chave promovida da pagina antiga
-    oldPag->key[MINKEYS - 1] = nullKey;
-    oldPag->child[MINKEYS] = -1;
+    pagina_antiga->chave[MINIMO_CHAVES - 1] = chave_nula;
+    pagina_antiga->filho[MINIMO_CHAVES] = -1;
 
-    newPage->keycount = MAXKEYS - 1;
-    oldPag->keycount = MINKEYS - 1;
+    nova_pagina->qtd_indices = MAXCHAVES - 1;
+    pagina_antiga->qtd_indices = MINIMO_CHAVES - 1;
 
-    *promotedKey = workKeys[MINKEYS - 1];
+    *chave_promovida = chave_atual[MINIMO_CHAVES - 1];
 
-    printf(promotedKeyMsg, (*promotedKey).keyStr);
+    printf("\nA chave %s foi promovida\n", (*chave_promovida).chave_primaria);
 }
 
-void InsertInPage(FILE *bTree, prmKey key, short rChild, page *pag)
+void inserir_na_pagina(FILE *arvore_b, CHAVE_PRIMARIA chave, short filho_direito, PAGINA_ARVORE *pag)
 {
     int j;
-    for (j = pag->keycount; strcmp(key.keyStr, pag->key[j - 1].keyStr) < 0 && j > 0; j--)
+    for (j = pag->qtd_indices; strcmp(chave.chave_primaria, pag->chave[j - 1].chave_primaria) < 0 && j > 0; j--)
     {
-        pag->key[j] = pag->key[j - 1];
-        pag->child[j + 1] = pag->child[j];
+        pag->chave[j] = pag->chave[j - 1];
+        pag->filho[j + 1] = pag->filho[j];
     }
-    pag->keycount += 1;
-    pag->key[j] = key;
-    pag->child[j + 1] = rChild;
+    pag->qtd_indices += 1;
+    pag->chave[j] = chave;
+    pag->filho[j + 1] = filho_direito;
 }
 
-void ReadPage(FILE *bTree, short rrn, page *pag)
+void ler_pagina(FILE *arvore_b, short rrn, PAGINA_ARVORE *pag)
 {
-    long addr = (long)rrn * (long)sizeof(page) + (long)2;
-    fseek(bTree, addr, 0);
-    fread(pag, sizeof(page), 1, bTree);
+    long addr = (long)rrn * (long)sizeof(PAGINA_ARVORE) + (long)2;
+    fseek(arvore_b, addr, 0);
+    fread(pag, sizeof(PAGINA_ARVORE), 1, arvore_b);
 }
 
-void WritePage(FILE *bTree, short rrn, page *pag)
+void escrever_pagina(FILE *arvore_b, short rrn, PAGINA_ARVORE *pag)
 {
     long addr;
-    addr = (long)rrn * (long)sizeof(page) + (long)2;
-    fseek(bTree, addr, 0);
-    fwrite(pag, sizeof(page), 1, bTree);
+    addr = (long)rrn * (long)sizeof(PAGINA_ARVORE) + (long)2;
+    fseek(arvore_b, addr, 0);
+    fwrite(pag, sizeof(PAGINA_ARVORE), 1, arvore_b);
 }
 
-void PageInit(page *pag)
+void inicializar_pagina(PAGINA_ARVORE *pag)
 {
-    for (int i = 0; i < MAXKEYS; i++)
+    for (int i = 0; i < MAXCHAVES; i++)
     {
-        strcpy(pag->key[i].keyStr, NULL_KEY);
-        pag->key[i].rrn = -1;
-        pag->child[i] = -1;
+        strcpy(pag->chave[i].chave_primaria, CHAVE_NULA);
+        pag->chave[i].rrn = -1;
+        pag->filho[i] = -1;
     }
-    pag->child[MAXKEYS] = -1;
+    pag->filho[MAXCHAVES] = -1;
 }
 
-void PutRoot(FILE *bTree, short root)
+void posicionar_raiz(FILE *arvore_b, short raiz)
 {
-    fseek(bTree, 0, 0);
-    fwrite(&root, sizeof(short), 1, bTree);
+    fseek(arvore_b, 0, 0);
+    fwrite(&raiz, sizeof(short), 1, arvore_b);
 }
