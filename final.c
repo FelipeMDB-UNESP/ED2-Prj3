@@ -200,7 +200,7 @@ int tam_pasta(PASTA* pst) {
     }
     return i;
 }
-
+// Calcula o tamanho de um vetor de chaves
 int tam_chaves(PARAGRAFO* parag) {
     int i;
     for (i=0; (*parag)[i] != NULL; i++) {
@@ -595,7 +595,7 @@ int main(int argc, char **argv)
 
     return 0;
 }
-
+// Mostra o menu
 int Menu()
 {
     int opt = -1;
@@ -648,7 +648,7 @@ void SetCounters(int nextData, int nextSearch)
     if (fclose(in) == EOF)
         printf(errStr);
 }
-
+// 
 registro *GetReg(int *num, int prox)
 {
     FILE *in;
@@ -708,7 +708,7 @@ char **GetSearchKeys(int *num, int prox)
 
     return dados;
 }
-
+// Imprime o registro recebido
 void printReg(registro reg)
 {
     printf("\n===============RESULTADO===============\n");
@@ -810,6 +810,7 @@ void AddReg(FILE *dataFile, FILE **bTree, registro reg, short *rootRRN)
 
 //Arvore-B
 //retorna YES caso ocorra inserção, retorna DUP caso duplicado;
+//Adiciona Registro na árvore
 int AddIndex(FILE **bTree, prmKey key, short *rootRRN)
 {
     if (*bTree == NULL)
@@ -834,7 +835,7 @@ int AddIndex(FILE **bTree, prmKey key, short *rootRRN)
         return YES;
     }
 }
-
+// Retorna a raiz de uma árvore
 short GetRoot(FILE *bTree)
 {
     short root = -1;
@@ -846,7 +847,7 @@ short GetRoot(FILE *bTree)
     }
     return root;
 }
-
+// Cria uma árvore
 short CreateTree(FILE **bTree, prmKey key)
 {
     short temp = -1;
@@ -858,7 +859,7 @@ short CreateTree(FILE **bTree, prmKey key)
     fwrite(&temp, sizeof(short), 1, *bTree);
     return CreateRoot(*bTree, key, -1, -1);
 }
-
+// Retorna o RRN da raíz
 short CreateRoot(FILE *bTree, prmKey key, short left, short right)
 {
     page pag;
@@ -872,7 +873,7 @@ short CreateRoot(FILE *bTree, prmKey key, short left, short right)
     PutRoot(bTree, rrn);
     return rrn;
 }
-
+// Retorna uma página
 short GetPage(FILE *bTree)
 {
     fseek(bTree, 0, 2);
@@ -880,7 +881,7 @@ short GetPage(FILE *bTree)
     addr -= (long)2;
     return (addr > 0) ? (short)addr / sizeof(page) : 0;
 }
-
+// Insere uma chave na árvore 
 short Insert(FILE *bTree, short rrn, prmKey key, short *promotedChild, prmKey *promotedKey)
 {
     if (rrn == -1)
@@ -923,7 +924,7 @@ short Insert(FILE *bTree, short rrn, prmKey key, short *promotedChild, prmKey *p
         return YES;
     }
 }
-
+// Procura por um nó
 short SearchNode(prmKey key, page *pag, short *pos)
 {
     int i = 0;
@@ -934,7 +935,7 @@ short SearchNode(prmKey key, page *pag, short *pos)
     *pos = i;
     return (*pos < pag->keycount && strcmp(key.keyStr, pag->key[*pos].keyStr) == 0) ? YES : NO;
 }
-
+// Função que realiza o Split
 void Split(FILE *bTree, prmKey key, short rChild, page *oldPag, prmKey *promotedKey, short *promotedRChild, page *newPage)
 {
     printf(splitMsg);
@@ -993,7 +994,7 @@ void Split(FILE *bTree, prmKey key, short rChild, page *oldPag, prmKey *promoted
 
     printf(promotedKeyMsg, (*promotedKey).keyStr);
 }
-
+// Insere na Página
 void InsertInPage(FILE *bTree, prmKey key, short rChild, page *pag)
 {
     int j;
@@ -1006,14 +1007,14 @@ void InsertInPage(FILE *bTree, prmKey key, short rChild, page *pag)
     pag->key[j] = key;
     pag->child[j + 1] = rChild;
 }
-
+// Lê a página recebida
 void ReadPage(FILE *bTree, short rrn, page *pag)
 {
     long addr = (long)rrn * (long)sizeof(page) + (long)2;
     fseek(bTree, addr, 0);
     fread(pag, sizeof(page), 1, bTree);
 }
-
+// Escreve na árvore recebida a página
 void WritePage(FILE *bTree, short rrn, page *pag)
 {
     long addr;
@@ -1021,7 +1022,7 @@ void WritePage(FILE *bTree, short rrn, page *pag)
     fseek(bTree, addr, 0);
     fwrite(pag, sizeof(page), 1, bTree);
 }
-
+// Inicializa uma página
 void PageInit(page *pag)
 {
     for (int i = 0; i < MAXKEYS; i++)
@@ -1032,7 +1033,7 @@ void PageInit(page *pag)
     }
     pag->child[MAXKEYS] = -1;
 }
-
+//atualiza header com raiz da arvore
 void PutRoot(FILE *bTree, short root)
 {
     fseek(bTree, 0, 0);
