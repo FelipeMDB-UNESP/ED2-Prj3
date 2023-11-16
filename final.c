@@ -8,7 +8,7 @@
 
 //Constantes
 #define MAXKEYS 3 //Arvore-b ordem 4
-#define NULL_KEY "@@@@"
+#define NULL_KEY "##################"
 
 //nome dos arquivos
 #define fileIn "insere.bin"
@@ -36,8 +36,8 @@
 
 typedef struct
 {
-    char codCliente[11];
-    char codVeiculo[7];
+    char codCliente[12];
+    char codVeiculo[8];
     char nomeCliente[50];
     char nomeVeiculo[50];
     int quantDias;
@@ -92,33 +92,6 @@ short GetPage(FILE *bTree);                                                     
 short CreateTree(FILE **bTree, prmKey Key);                                                  //cria a arvore
 short CreateRoot(FILE *bTree, prmKey key, short left, short right);                          //Cria raiz
 short SearchNode(prmKey key, page *pag, short *pos);
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 //Aloca espaço para um int
@@ -467,27 +440,9 @@ int main(int argc, char **argv)
         return 0;
 
     short rootRRN = -1;
-    FILE *bTree = NULL;
-    if ((bTree = fopen(treeFile, "r+b")) != NULL)
-    {
-        rootRRN = GetRoot(bTree);
-        if (rootRRN == -1)
-        {
-            printf(errReadF);
-            return 0;
-        }
-    }
-
     FILE *arq = NULL;
-    if ((arq = fopen(mainFile, "r+b")) == NULL)
-    {
-        printf(makingFileMsg);
-        if ((arq = fopen(mainFile, "a+b")) == NULL)
-        {
-            printf(errMakeFile);
-            return 0;
-        }
-    }
+    FILE *bTree = NULL;
+    
 
     //quantidade de dados no arquivo insere.bin
     int tam;
@@ -510,6 +465,24 @@ int main(int argc, char **argv)
             //Inserir
             if (load_de_arquivos)
             {
+                if ((arq = fopen(mainFile, "r+b")) == NULL)
+                {
+                    printf(makingFileMsg);
+                    if ((arq = fopen(mainFile, "a+b")) == NULL)
+                    {
+                        printf(errMakeFile);
+                        return 0;
+                    }
+                }
+                if ((bTree = fopen(treeFile, "r+b")) != NULL)
+                {
+                    rootRRN = GetRoot(bTree);
+                    if (rootRRN == -1)
+                    {
+                        printf(errReadF);
+                        return 0;
+                    }
+                }
                 printf("\nDigite um numero entre 1 e %d\n", tam);
                 int posRegistro;
                 printf("Qual o indice do registro que deseja inserir?");
@@ -523,6 +496,8 @@ int main(int argc, char **argv)
                 reg.quantDias = *(pasta[posRegistro-1]->quantDias);
 
                 AddReg(arq, &bTree, reg, &rootRRN);
+                fclose(arq);
+                fclose(bTree);
             }
             else {
                     printf("Arquivos ainda nao foram carregados!\n");
@@ -530,15 +505,55 @@ int main(int argc, char **argv)
             break;
         case 2:
             //Listar dados - percurso in ordem
+            if ((arq = fopen(mainFile, "r+b")) == NULL)
+            {
+                printf(makingFileMsg);
+                if ((arq = fopen(mainFile, "a+b")) == NULL)
+                {
+                    printf(errMakeFile);
+                    return 0;
+                }
+            }
+            if ((bTree = fopen(treeFile, "r+b")) != NULL)
+            {
+                rootRRN = GetRoot(bTree);
+                if (rootRRN == -1)
+                {
+                    printf(errReadF);
+                    return 0;
+                }
+            }
             printf(searchingMSG);
             InOrdem(arq, bTree, rootRRN);
+            fclose(arq);
+            fclose(bTree);
             break;
         case 3:
+            if ((arq = fopen(mainFile, "r+b")) == NULL)
+            {
+                printf(makingFileMsg);
+                if ((arq = fopen(mainFile, "a+b")) == NULL)
+                {
+                    printf(errMakeFile);
+                    return 0;
+                }
+            }
+            if ((bTree = fopen(treeFile, "r+b")) != NULL)
+            {
+                rootRRN = GetRoot(bTree);
+                if (rootRRN == -1)
+                {
+                    printf(errReadF);
+                    return 0;
+                }
+            }
             //Pesquisar cliente - busca na árvore
             if (currentSearch < totalSearch){
                 Search(arq, bTree, rootRRN, searchKey[currentSearch]);
                 currentSearch++;
             }
+            fclose(arq);
+            fclose(bTree);
             break;
         case 4:
             pasta = carregar_dados("insere.bin");
@@ -552,13 +567,6 @@ int main(int argc, char **argv)
     } while (option != 5);
     //Salva os contadores
     SetCounters(nexData + currentData, nextSearch + currentSearch);
-
-    //Fechar arquivos
-    if (fclose(bTree) == EOF)
-        printf(errStr);
-
-    if (fclose(arq) == EOF)
-        printf(errStr);
 
     //Liberar memória
     free(dados);
