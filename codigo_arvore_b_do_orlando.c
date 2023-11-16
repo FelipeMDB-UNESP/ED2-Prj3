@@ -198,8 +198,7 @@ short create_tree()
 short getpage() // checar quando da primeira página!!!
 {
     long lseek(), addr; // trocar por fseek()
-    addr = lseek(btfd, 0L, 2) - 2L; // 2L (cabeçalho)!; usar ftell na sequência para saber quantos
-    // bytes andou no arquivo
+    addr = lseek(btfd, 0L, 2) - 2L; // 2L (cabeçalho)!; usar ftell na sequência para saber quantos bytes andou no arquivo
     return ((short) addr / PAGESIZE);
 }
 
