@@ -538,25 +538,25 @@ int main(int argc, char **argv)
             break;
         case 3:
             //Pesquisar cliente - busca na árvore
-            if ((arq = fopen(mainFile, "r+b")) == NULL)
-            {
-                printf(makingFileMsg);
-                if ((arq = fopen(mainFile, "a+b")) == NULL)
-                {
-                    printf(errMakeFile);
-                    return 0;
-                }
-            }
-            if ((bTree = fopen(treeFile, "r+b")) != NULL)
-            {
-                rootRRN = GetRoot(bTree);
-                if (rootRRN == -1)
-                {
-                    printf(errReadF);
-                    return 0;
-                }
-            }
             if (load_de_arquivos) {
+                if ((arq = fopen(mainFile, "r+b")) == NULL)
+                {
+                    printf(makingFileMsg);
+                    if ((arq = fopen(mainFile, "a+b")) == NULL)
+                    {
+                        printf(errMakeFile);
+                        return 0;
+                    }
+                }
+                if ((bTree = fopen(treeFile, "r+b")) != NULL)
+                {
+                    rootRRN = GetRoot(bTree);
+                    if (rootRRN == -1)
+                    {
+                        printf(errReadF);
+                        return 0;
+                    }
+                }
                 int posChave;
                 printf("Qual a posicao da chave que voce deseja pesquisar? 1-%d\n",tamChaves-1);
                 scanf(" %d", &posChave);
