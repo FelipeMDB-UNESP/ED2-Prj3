@@ -571,31 +571,31 @@ void printar_registro_e_rrn(FILE *arq, int rrn)
 }
 
 //Busca uma chave
-void buscar(FILE *arq, FILE *arvore_b, int rrn, char *chave)
+void buscar(FILE *arq, FILE *bTree, int rrn, char *key)
 {
     if (rrn < 0)
     {
-        printf("\nA chave %s nao foi encontrada\n", chave);
+        printf("A chave %s nao foi localizada", key);
         return;
     }
 
-    PAGINA_ARVORE pagina_atual;
-    ler_pagina(arvore_b, rrn, &pagina_atual);
+    PAGINA_ARVORE currentPage;
+    ler_pagina(bTree, rrn, &currentPage);
     int i;
     for (i = 0; i < MAXCHAVES; i++)
     {
-        int comp = strcmp(chave, pagina_atual.chave[i].chave_primaria);
+        int comp = strcmp(key, currentPage.chave[i].chave_primaria);
 
         if (comp < 0)
-            return buscar(arq, arvore_b, pagina_atual.filho[i], chave); //se for menor, pesquisa a esquerda
+            return buscar(arq, bTree, currentPage.filho[i], key); //se for menor, pesquisa a esquerda
         else if (comp == 0)
         {
-            printf("A chave %s foi encontrada na pagina %d e posicao %d", chave, rrn, i);
-            printar_registro_e_rrn(arq, pagina_atual.chave[i].rrn); //se for igual, encontrou
+            printf("A chave %s foi localizada na pagina %d e posicao %d", key, rrn, i);
+            printar_registro_e_rrn(arq, currentPage.chave[i].rrn); //se for igual, encontrou
             return;
         }
     }
-    return buscar(arq, arvore_b, pagina_atual.filho[i], chave); //pesquisa a direita da ultima chave
+    return buscar(arq, bTree, currentPage.filho[i], key); //pesquisa a direita da ultima chave
 }
 
 //Percorre a árvo in-ordem e mostra os regsitros ordenados
@@ -848,11 +848,11 @@ void inserir_na_pagina(FILE *arvore_b, CHAVE_PRIMARIA chave, short filho_direito
     pag->filho[j + 1] = filho_direito;
 }
 
-void ler_pagina(FILE *arvore_b, short rrn, PAGINA_ARVORE *pag)
+void ler_pagina(FILE *arvore, short rrn, PAGINA_ARVORE *pag)
 {
     long addr = (long)rrn * (long)sizeof(PAGINA_ARVORE) + (long)2;
-    fseek(arvore_b, addr, 0);
-    fread(pag, sizeof(PAGINA_ARVORE), 1, arvore_b);
+    fseek(arvore, addr, 0);
+    fread(pag, sizeof(PAGINA_ARVORE), 1, arvore);
 }
 
 void escrever_pagina(FILE *arvore_b, short rrn, PAGINA_ARVORE *pag)
