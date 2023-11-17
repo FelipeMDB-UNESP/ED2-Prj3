@@ -484,13 +484,14 @@ int main(int argc, char **argv)
             fclose(arvore_b);
             break;
         case 3:
-            //Pesquisar cliente - busca na árvore
+             //Pesquisar cliente - busca na árvore
             if (load_de_arquivos) {
-                if ((arq = fopen(arq_principal, "r+b")) == NULL){
-                    printf("\nCriando arquivo de dados...\n");
+                if ((arq = fopen(arq_principal, "r+b")) == NULL)
+                {
+                    printf("Criando arquivo principal");
                     if ((arq = fopen(arq_principal, "a+b")) == NULL)
                     {
-                        printf("\nErro ao criar arquivo!");
+                        printf("Erro abrindo arquivo");
                         return 0;
                     }
                 }
@@ -499,22 +500,21 @@ int main(int argc, char **argv)
                     raizRRN = obter_raiz(arvore_b);
                     if (raizRRN == -1)
                     {
-                        printf("\nErro ao ler o arquivo!\n");
+                        printf("Erro lendo arquivo");
                         return 0;
                     }
                 }
-                
                 int posChave;
-                printf("\nQual a posicao da chave que voce deseja pesquisar? 1-%d\n",tamChaves-1);
+                printf("Qual a posicao da chave que voce deseja pesquisar? 1-%d\n",tamChaves-1);
                 scanf(" %d", &posChave);
-                printf("\nPesquisando a chave %s.......\n", chaves[posChave-1]);
+                printf("Pesquisando a chave %s.......\n", chaves[posChave-1]);
 
                 buscar(arq, arvore_b, raizRRN, chaves[posChave-1]);
                 fclose(arq);
                 fclose(arvore_b);
             }
             else {
-                    printf("\nArquivos ainda nao foram carregados!\n");
+                    printf("Arquivos ainda nao foram carregados!\n");
             } 
             break;
         case 4:
