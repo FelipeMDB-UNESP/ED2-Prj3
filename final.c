@@ -485,25 +485,25 @@ int main(int argc, char **argv)
             break;
         case 3:
             //Pesquisar cliente - busca na árvore
-            if ((arq = fopen(arq_principal, "r+b")) == NULL)
-            {
-                printf("\nCriando arquivo de dados...\n");
-                if ((arq = fopen(arq_principal, "a+b")) == NULL)
-                {
-                    printf("\nErro ao criar arquivo!");
-                    return 0;
-                }
-            }
-            if ((arvore_b = fopen(arq_arvore_b, "r+b")) != NULL)
-            {
-                raizRRN = obter_raiz(arvore_b);
-                if (raizRRN == -1)
-                {
-                    printf("\nErro ao ler o arquivo!\n");
-                    return 0;
-                }
-            }
             if (load_de_arquivos) {
+                if ((arq = fopen(arq_principal, "r+b")) == NULL){
+                    printf("\nCriando arquivo de dados...\n");
+                    if ((arq = fopen(arq_principal, "a+b")) == NULL)
+                    {
+                        printf("\nErro ao criar arquivo!");
+                        return 0;
+                    }
+                }
+                if ((arvore_b = fopen(arq_arvore_b, "r+b")) != NULL)
+                {
+                    raizRRN = obter_raiz(arvore_b);
+                    if (raizRRN == -1)
+                    {
+                        printf("\nErro ao ler o arquivo!\n");
+                        return 0;
+                    }
+                }
+                
                 int posChave;
                 printf("\nQual a posicao da chave que voce deseja pesquisar? 1-%d\n",tamChaves-1);
                 scanf(" %d", &posChave);
@@ -575,7 +575,7 @@ void buscar(FILE *arq, FILE *arvore_b, int rrn, char *chave)
 {
     if (rrn < 0)
     {
-        printf("\nA chave %s nao foi localizada\n", chave);
+        printf("\nA chave %s nao foi encontrada\n", chave);
         return;
     }
 
@@ -590,7 +590,7 @@ void buscar(FILE *arq, FILE *arvore_b, int rrn, char *chave)
             return buscar(arq, arvore_b, pagina_atual.filho[i], chave); //se for menor, pesquisa a esquerda
         else if (comp == 0)
         {
-            printf("\nA chave %s foi encontrada em pagina %d | posicao %d\n", chave, rrn, i);
+            printf("A chave %s foi encontrada na pagina %d e posicao %d", chave, rrn, i);
             printar_registro_e_rrn(arq, pagina_atual.chave[i].rrn); //se for igual, encontrou
             return;
         }
